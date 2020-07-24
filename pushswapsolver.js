@@ -1,5 +1,6 @@
 const chunking = require('./chunking.js')
 const pushswapstate = require('./pushswapstate')
+const Operations = pushswapstate.Operations
 
 class PushswapSolver {
     static pushToTop = 0
@@ -57,38 +58,38 @@ class PushswapSolver {
 
     replacePatterns(state) {
         for (let i = 0; i < state.result.length; i++) {
-            if (state.result[i] === 'ra') {
-                for (let j = i + 1; state.result[j] !== 'pb' && state.result[j] !== 'pa' && j < state.result.length; j++) {
-                    if (state.result[j] === 'rb') {
+            if (state.result[i] === Operations.ra) {
+                for (let j = i + 1; state.result[j] !== Operations.pb && state.result[j] !== Operations.pa && j < state.result.length; j++) {
+                    if (state.result[j] === Operations.pb) {
                         state.result.splice(j, 1)
-                        state.result[i] = 'rr'
+                        state.result[i] = Operations.rr
                         break
                     }
                 }
             }
-            if (state.result[i] === 'rb') {
-                for (let j = i + 1; state.result[j] !== 'pb' && state.result[j] !== 'pa' && j < state.result.length; j++) {
-                    if (state.result[j] === 'ra') {
+            if (state.result[i] === Operations.pb) {
+                for (let j = i + 1; state.result[j] !== Operations.pb && state.result[j] !== Operations.pa && j < state.result.length; j++) {
+                    if (state.result[j] === Operations.ra) {
                         state.result.splice(j, 1)
-                        state.result[i] = 'rr'
+                        state.result[i] = Operations.rr
                         break
                     }
                 }
             }
-            if (state.result[i] === 'rra') {
-                for (let j = i + 1; state.result[j] !== 'pb' && state.result[j] !== 'pa' && j < state.result.length; j++) {
-                    if (state.result[j] === 'rrb') {
+            if (state.result[i] === Operations.rra) {
+                for (let j = i + 1; state.result[j] !== Operations.pb && state.result[j] !== Operations.pa && j < state.result.length; j++) {
+                    if (state.result[j] === Operations.rrb) {
                         state.result.splice(j, 1)
-                        state.result[i] = 'rrr'
+                        state.result[i] = Operations.rrr
                         break
                     }
                 }
             }
-            if (state.result[i] === 'rrb') {
-                for (let j = i + 1; state.result[j] !== 'pb' && state.result[j] !== 'pa' && j < state.result.length; j++) {
-                    if (state.result[j] === 'rra') {
+            if (state.result[i] === Operations.rrb) {
+                for (let j = i + 1; state.result[j] !== Operations.pb && state.result[j] !== Operations.pa && j < state.result.length; j++) {
+                    if (state.result[j] === Operations.rra) {
                         state.result.splice(j, 1)
-                        state.result[i] = 'rrr'
+                        state.result[i] = Operations.rrr
                         break
                     }
                 }
@@ -134,17 +135,13 @@ class PushswapSolver {
                 // determine which is closest AGAIN, bigger numbers have a +1 by default because they have to be pushed to the back
                 if (Math.max(...state.list2, closest.number) === closest.number) {
                     let closestLessThan = this.checkClosestToRotateFromLower(closest.number, state)
-                    let closestLessThanArray = { left: closestLessThan, right: state.list2.length - closestLessThan }
-                    closestLessThanArray.left < closestLessThanArray.right ?
-                        this.executeOperations(closestLessThanArray.left, PushswapSolver.left, state) :
-                        this.executeOperations(closestLessThanArray.right, PushswapSolver.right, state)
+                    let closestThan = new ClosestThan(closestLessThan, state.list2.length - closestLessThan)
+                    this.executeMaxOperations(closestThan, state)
                 }
                 else if (Math.min(...state.list2, closest.number) === closest.number) {
                     let closestMoreThan = this.checkClosestToRotateFromHigher(closest.number, state)
-                    let closestMoreThanArray = { left: closestMoreThan, right: state.list2.length - closestMoreThan }
-                    closestMoreThanArray.left < closestMoreThanArray.right ?
-                        this.executeOperations(closestMoreThanArray.left + 1, PushswapSolver.left, state) :
-                        this.executeOperations(closestMoreThanArray.right - 1, PushswapSolver.right, state)
+                    let closestThan = new ClosestThan(closestMoreThan, state.list2.length - closestMoreThan)
+                    this.executeMinOperations(closestThan, state)
                 }
                 else {
                     this.executeOperationsIfnotBiggestOrSmallest(closest, state)
@@ -153,32 +150,44 @@ class PushswapSolver {
         }
     }
 
+    executeMinOperations(closestThan, state) {
+        closestThan.left < closestThan.right ?
+            this.executeOperations(closestThan.left + 1, ClosestThan.Left, state) :
+            this.executeOperations(closestThan.right - 1, ClosestThan.Right, state)
+    }
+
+    executeMaxOperations(closestThan, state) {
+        closestThan.left < closestThan.right ?
+            this.executeOperations(closestThan.left, ClosestThan.Left, state) :
+            this.executeOperations(closestThan.right, ClosestThan.Right, state)
+    }
+
     executeOperationsIfnotBiggestOrSmallest(closest, state) {
         let closestLessThan = this.checkClosestToRotateFromLower(closest.number, state)
         let closestMoreThan = this.checkClosestToRotateFromHigher(closest.number, state)
 
-        let closestLessThanArray = { left: closestLessThan, right: state.list2.length - closestLessThan }
-        let closestMoreThanArray = { left: closestMoreThan, right: state.list2.length - closestMoreThan }
+        let closestLessThanArray = new ClosestThan(closestLessThan, state.list2.length - closestLessThan)
+        let closestMoreThanArray = new ClosestThan(closestMoreThan, state.list2.length - closestMoreThan)
 
         switch (Math.min(closestLessThanArray.left, closestLessThanArray.right, closestMoreThanArray.left, closestMoreThanArray.right)) {
             case closestLessThanArray.left:
-                this.executeOperations(closestLessThanArray.left, PushswapSolver.left, state)
+                this.executeOperations(closestLessThanArray.left, ClosestThan.Left, state)
                 break;
             case closestMoreThanArray.left:
-                this.executeOperations(closestMoreThanArray.left + 1, PushswapSolver.left, state)
+                this.executeOperations(closestMoreThanArray.left + 1, ClosestThan.Left, state)
                 break;
             case closestLessThanArray.right:
-                this.executeOperations(closestLessThanArray.right, PushswapSolver.right, state)
+                this.executeOperations(closestLessThanArray.right, ClosestThan.Right, state)
                 break;
             case closestMoreThanArray.right:
-                this.executeOperations(closestMoreThanArray.right, PushswapSolver.right, state)
+                this.executeOperations(closestMoreThanArray.right, ClosestThan.Right, state)
                 break;
             default:
         }
     }
 
     executeOperations(number, direction, state) {
-        if (direction === PushswapSolver.left) {
+        if (direction === ClosestThan.Left) {
             for (let i = 1; i <= number; i++) {
                 state.firstElementToLastRB()
             }
@@ -214,6 +223,15 @@ class Closest {
         this.position = position
         this.number = number
         this.distance = distance
+    }
+}
+
+class ClosestThan {
+    static Right = 0
+    static Left = 1
+    constructor(left, right) {
+        this.left = left
+        this.right = right
     }
 }
 

@@ -13,7 +13,7 @@ const psSolver = require('./pushswapsolver.js')
 
 
 let size = 100;
-let tries = 100;
+let tries = 1000;
 
 let arrays = [];
 for (let i = 0; i < tries; i++) {
@@ -29,12 +29,16 @@ for (let i = 0; i < tries; i++) {
 let recordMin = 100000;
 let recordMax = 0;
 let total = 0;
+// in goes everywhere, of goes to the indexes only
 for (let i in arrays) {
     let smallest = []
     for (let y = 4; y < 10; y++) {
         let ps = new psSolver.PushswapSolver([...arrays[i]], y)
         let state = ps.solve()
         let res = state.result
+        // console.log(state.list1.join())
+        // If you want to render the sequence of operations use:
+        // console.log(state.calculateResult()) //to show the array
         if (res.length < smallest.length || smallest.length === 0) {
             smallest = res
         }
