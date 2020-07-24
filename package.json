@@ -1,0 +1,11 @@
+{
+  "name": "pushswapchunk",
+  "version": "1.0.0",
+  "description": "Push Swap",
+  "main": "pushswapchunk.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "Antonio Tina",
+  "license": "ISC"
+}
