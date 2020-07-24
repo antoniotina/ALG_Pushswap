@@ -1,14 +1,14 @@
 const Operations = {
-    sa = 0,
-    sb = 1,
-    pa = 2,
-    pb = 3,
-    ra = 4,
-    rb = 5,
-    rr = 6,
-    rra = 7,
-    rrb = 8,
-    rrr = 9
+    sa: 0,
+    sb: 1,
+    pa: 2,
+    pb: 3,
+    ra: 4,
+    rb: 5,
+    rr: 6,
+    rra: 7,
+    rrb: 8,
+    rrr: 9
 }
 
 class PushSwapState {
@@ -87,5 +87,5 @@ class PushSwapState {
     }
 }
 
-module.exports.Operations = Operations
+// module.exports.Operations = Operations
 module.exports.PushSwapState = PushSwapState
