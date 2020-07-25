@@ -2,10 +2,16 @@
   "name": "pushswapchunk",
   "version": "1.0.0",
   "description": "Push Swap",
-  "main": "pushswapchunk.js",
+  "main": "index.js",
   "scripts": {
     "test": "test"
   },
   "author": "Antonio Tina",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "sequelize": "^6.3.3"
+  }
 }

@@ -67,7 +67,7 @@ class PushswapSolver {
                     }
                 }
             }
-            if (state.result[i] === Operations.pb) {
+            if (state.result[i] === Operations.rb) {
                 for (let j = i + 1; state.result[j] !== Operations.pb && state.result[j] !== Operations.pa && j < state.result.length; j++) {
                     if (state.result[j] === Operations.ra) {
                         state.result.splice(j, 1)

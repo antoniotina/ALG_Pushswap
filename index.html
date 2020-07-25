@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" list1="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <title>Document</title>
+    <style>
+    </style>
+</head>
+
+<body>
+    <div>
+        <button onclick="generate()">Generate</button>
+        <button onclick="solve()">Solve</button>
+        <button onclick="next()">Next</button>
+        <button onclick="next(10)">Next 10</button>
+        <button onclick="next(100)">Next 100</button>
+        <button onclick="log()">Log</button>
+    </div>
+    <div>
+        <button onclick="sa()">SA</button>
+        <button onclick="sb()">SB</button>
+        <button onclick="sc()">SC</button>
+        <button onclick="pa()">PA</button>
+        <button onclick="pb()">PB</button>
+        <button onclick="ra()">RA</button>
+        <button onclick="rb()">RB</button>
+        <button onclick="rr()">RR</button>
+        <button onclick="rra()">RRA</button>
+        <button onclick="rrb()">RRB</button>
+        <button onclick="rrr()">RRR</button>
+    </div>
+    <div>
+        <div id="list1"></div>
+        <div id="list2"></div>
+    </div>
+    <!-- <script src="index.js"></script> -->
+    <script>
+
+        let list1 = document.getElementById("list1");
+        let list2 = document.getElementById("list2");
+        let startArray = [];
+        let resultIndex = 0;
+        let result = null;
+        let pS = null;
+        let size = 100;
+
+        function next(qtt = 1) {
+            if (pS == null) {
+                pS = new Pushswap(startArray);
+                result = pS.orderBinary();
+            }
+
+            for (let i = 0; i < qtt; i++) {
+                let move = result[resultIndex];
+                window[move]();
+                resultIndex++;
+            }
+        }
+
+        function sa() {
+            if (list1.children.length >= 2)
+                list1.children[1].parentNode.insertBefore(list1.children[1], list1.children[0]);
+        }
+
+        function sb() {
+            if (list2.children.length >= 2)
+                list2.children[1].parentNode.insertBefore(list2.children[1], list2.children[0]);
+        }
+
+        function sc() {
+            sa();
+            sb();
+        }
+
+        function pa() {
+            if (this.list2.children.length > 0)
+                list1.prepend(list2.removeChild(list2.children[0]));
+        }
+
+        function pb() {
+            if (this.list1.children.length > 0)
+                list2.prepend(list1.removeChild(list1.children[0]));
+        }
+
+        function ra() {
+            if (this.list1.children.length > 0)
+                list1.appendChild(list1.removeChild(list1.children[0]));
+        }
+
+        function rb() {
+            if (this.list2.children.length > 0)
+                list2.appendChild(list2.removeChild(list2.children[0]));
+        }
+
+        function rr() {
+            ra();
+            rb();
+        }
+
+        function rra() {
+            if (this.list1.children.length > 0)
+                list1.prepend(list1.removeChild(list1.children[list1.children.length - 1]))
+        }
+
+        function rrb() {
+            if (this.list2.children.length > 0)
+                list2.prepend(list2.removeChild(list2.children[list2.children.length - 1]))
+        }
+
+        function rrr() {
+            rra();
+            rrb();
+        }
+
+
+        function getColor(value) {
+            //value from 0 to 1
+            var hue = ((1 - value) * 300).toString(10);
+            return ["hsl(", hue, ",100%,50%)"].join("");
+        }
+
+
+        function display() {
+            list1.innerHTML = "";
+            for (var i = 0; i < startArray.length; i++) {
+                var d = document.createElement('div');
+                d.style.backgroundColor = getColor(startArray[i] / size);
+                d.style.width = "10px";
+                d.style.height = "50px";
+                d.style.display = "inline-block";
+                // d.innerHTML = startArray[i];
+                list1.appendChild(d);
+            }
+        }
+
+        function generate() {
+            startArray = [];
+            for (let i = 0; i < size; i++) {
+                startArray.push(i);
+            }
+            startArray.sort(() => Math.random() - 0.5);
+            display();
+        }
+
+        async function getResult() {
+            return await $.ajax({
+                url: "http://127.0.0.1:5000/solve",
+                type: 'POST',
+                data: { startArray: startArray.map(Number) }
+            })
+        }
+
+        async function solve() {
+            let result = await getResult();
+            console.log(result)
+            let i = 0;
+            let intervalId;
+            intervalId = setInterval(() => {
+                i++;
+                if (i <= result.length) {
+                    let move = result[i - 1];
+                    window[move]();
+                }
+                else
+                    clearInterval(intervalId);
+            }, 10)
+        }
+
+        function log() {
+            console.log(list1, list1.children.length, list2, list2.children.length);
+            console.log(result.slice(resultIndex));
+        }
+    </script>
+</body>
+
+</html>

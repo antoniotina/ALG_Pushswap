@@ -33,9 +33,12 @@ let total = 0;
 for (let i in arrays) {
     let smallest = []
     for (let y = 4; y < 10; y++) {
+        // console.log(arrays[i])
         let ps = new psSolver.PushswapSolver([...arrays[i]], y)
         let state = ps.solve()
         let res = state.result
+        // console.log(res)
+        // console.log(state.list1)
         // console.log(state.list1.join())
         // If you want to render the sequence of operations use:
         // console.log(state.calculateResult()) //to show the array
