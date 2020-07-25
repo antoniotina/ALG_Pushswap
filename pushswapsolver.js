@@ -5,8 +5,6 @@ const Operations = pushswapstate.Operations
 class PushswapSolver {
     static pushToTop = 0
     static pushToBottom = 1
-    static left = 2
-    static right = 3
 
     constructor(originalArray, chunkDivision) {
         this.chunks = new chunking.Chunks(originalArray, chunkDivision)
