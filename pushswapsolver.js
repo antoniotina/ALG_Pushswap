@@ -1,4 +1,3 @@
-const chunking = require('./chunking.js')
 const pushswapstate = require('./pushswapstate')
 const Operations = pushswapstate.Operations
 
@@ -7,7 +6,19 @@ class PushswapSolver {
     static pushToBottom = 1
 
     constructor(originalArray, chunkDivision) {
-        this.chunks = new chunking.Chunks(originalArray, chunkDivision)
+        this.originalArray = [...originalArray]
+        this.sortedArray = [...originalArray].sort((a, b) => b - a)
+        this.chunks = this.chunkItUp(this.sortedArray, this.sortedArray.length / chunkDivision)
+    }
+
+    chunkItUp(arr, len) {
+        let chunks = [],
+            i = 0,
+            n = arr.length;
+        while (i < n) {
+            chunks.push(arr.slice(i, i += len));
+        }
+        return chunks
     }
 
     checkBottomFromChunk(chunk, state) {
@@ -27,88 +38,73 @@ class PushswapSolver {
     }
 
     checkClosestToRotateFromHigher(number, state) {
-        for (let i = number + 1; i <= Math.max(...state.list2); i++) {
-            if (state.list2.includes(i)) {
-                return state.list2.indexOf(i)
-            }
-        }
-        process.exit(-1)
+        let nextFromHigher = state.list2.filter((x) => x > number)
+        let smallest = Math.min(...nextFromHigher)
+        return state.list2.indexOf(smallest)
     }
 
     checkClosestToRotateFromLower(number, state) {
-        for (let i = number - 1; i >= 0; i--) {
-            if (state.list2.includes(i)) {
-                return state.list2.indexOf(i)
-            }
-        }
-        process.exit(-1)
+        let nextFromLower = state.list2.filter((x) => x < number)
+        let biggest = Math.max(...nextFromLower)
+        return state.list2.indexOf(biggest)
     }
 
     solve() {
-        let state = new pushswapstate.PushSwapState(this.chunks.originalArray)
-        for (let chunk of this.chunks.chunks) {
+        let state = new pushswapstate.PushSwapState(this.originalArray)
+        for (let chunk of this.chunks) {
             this.solveChunks(chunk, state)
         }
         this.orderAndPushToA(state)
         this.replacePatterns(state)
+        // console.log(state.calculateResult().join())
         return state
+    }
+
+    collapseSymetricOperations(symetric, replaceWith, startIndex, result) {
+        for (let j = startIndex + 1; result[j] !== Operations.pb && result[j] !== Operations.pa && j < result.length; j++) {
+            if (result[j] === symetric) {
+                result.splice(j, 1)
+                result[startIndex] = replaceWith
+                break
+            }
+        }
     }
 
     replacePatterns(state) {
         for (let i = 0; i < state.result.length; i++) {
-            if (state.result[i] === Operations.ra) {
-                for (let j = i + 1; state.result[j] !== Operations.pb && state.result[j] !== Operations.pa && j < state.result.length; j++) {
-                    if (state.result[j] === Operations.pb) {
-                        state.result.splice(j, 1)
-                        state.result[i] = Operations.rr
-                        break
-                    }
-                }
-            }
-            if (state.result[i] === Operations.rb) {
-                for (let j = i + 1; state.result[j] !== Operations.pb && state.result[j] !== Operations.pa && j < state.result.length; j++) {
-                    if (state.result[j] === Operations.ra) {
-                        state.result.splice(j, 1)
-                        state.result[i] = Operations.rr
-                        break
-                    }
-                }
-            }
-            if (state.result[i] === Operations.rra) {
-                for (let j = i + 1; state.result[j] !== Operations.pb && state.result[j] !== Operations.pa && j < state.result.length; j++) {
-                    if (state.result[j] === Operations.rrb) {
-                        state.result.splice(j, 1)
-                        state.result[i] = Operations.rrr
-                        break
-                    }
-                }
-            }
-            if (state.result[i] === Operations.rrb) {
-                for (let j = i + 1; state.result[j] !== Operations.pb && state.result[j] !== Operations.pa && j < state.result.length; j++) {
-                    if (state.result[j] === Operations.rra) {
-                        state.result.splice(j, 1)
-                        state.result[i] = Operations.rrr
-                        break
-                    }
-                }
+            switch (state.result[i]) {
+                case Operations.ra:
+                    this.collapseSymetricOperations(Operations.rb, Operations.rr, i, state.result)
+                    break
+                case Operations.rb:
+                    this.collapseSymetricOperations(Operations.ra, Operations.rr, i, state.result)
+                    break
+                case Operations.rra:
+                    this.collapseSymetricOperations(Operations.rrb, Operations.rrr, i, state.result)
+                    break
+                case Operations.rrb:
+                    this.collapseSymetricOperations(Operations.rra, Operations.rrr, i, state.result)
+                    break
+                default:
+                    break;
             }
         }
     }
 
     orderAndPushToA(state) {
-        let indexOfBiggestNumber = state.list2.indexOf(this.chunks.sortedArray[0])
+        let indexOfBiggestNumber = state.list2.indexOf(this.sortedArray[0])
         let closestLeftOrRight = { left: indexOfBiggestNumber, right: state.list2.length - indexOfBiggestNumber }
         if (closestLeftOrRight.left < closestLeftOrRight.right) {
-            for (let i = 1; i <= closestLeftOrRight.left; i++) {
+            for (let i = 0; i < closestLeftOrRight.left; i++) {
                 state.firstElementToLastRB()
             }
         }
         else {
-            for (let i = 1; i <= closestLeftOrRight.right; i++) {
+            for (let i = 0; i < closestLeftOrRight.right; i++) {
                 state.lastElementToFirstRRB()
             }
         }
-        for (let i = 0; i < this.chunks.originalArray.length; i++) {
+        for (let i = 0; i < this.originalArray.length; i++) {
             state.pushFirstBtoAPA()
         }
     }
@@ -132,13 +128,11 @@ class PushswapSolver {
                 // if the number is the smallest or the biggest, i have to find the biggest number and put it in front, then push the smallest
                 // determine which is closest AGAIN, bigger numbers have a +1 by default because they have to be pushed to the back
                 if (Math.max(...state.list2, closest.number) === closest.number) {
-                    let closestLessThan = this.checkClosestToRotateFromLower(closest.number, state)
-                    let closestThan = new ClosestThan(closestLessThan, state.list2.length - closestLessThan)
+                    let closestThan = this.findClosestThan(closest.number, state, this.checkClosestToRotateFromLower)
                     this.executeMaxOperations(closestThan, state)
                 }
                 else if (Math.min(...state.list2, closest.number) === closest.number) {
-                    let closestMoreThan = this.checkClosestToRotateFromHigher(closest.number, state)
-                    let closestThan = new ClosestThan(closestMoreThan, state.list2.length - closestMoreThan)
+                    let closestThan = this.findClosestThan(closest.number, state, this.checkClosestToRotateFromHigher)
                     this.executeMinOperations(closestThan, state)
                 }
                 else {
@@ -146,6 +140,11 @@ class PushswapSolver {
                 }
             }
         }
+    }
+
+    findClosestThan(number, state, checkClosest) {
+        let closestToNumber = checkClosest(number, state)
+        return new ClosestThan(closestToNumber, state.list2.length - closestToNumber)
     }
 
     executeMinOperations(closestThan, state) {
@@ -161,24 +160,19 @@ class PushswapSolver {
     }
 
     executeOperationsIfnotBiggestOrSmallest(closest, state) {
-        let closestLessThan = this.checkClosestToRotateFromLower(closest.number, state)
-        let closestMoreThan = this.checkClosestToRotateFromHigher(closest.number, state)
+        let closestLessThanArray = this.findClosestThan(closest.number, state, this.checkClosestToRotateFromLower)
+        let closestMoreThanArray = this.findClosestThan(closest.number, state, this.checkClosestToRotateFromHigher)
+        let smallestDistanceToTop = Math.min(closestLessThanArray.left, closestLessThanArray.right, closestMoreThanArray.left, closestMoreThanArray.right)
 
-        let closestLessThanArray = new ClosestThan(closestLessThan, state.list2.length - closestLessThan)
-        let closestMoreThanArray = new ClosestThan(closestMoreThan, state.list2.length - closestMoreThan)
-
-        switch (Math.min(closestLessThanArray.left, closestLessThanArray.right, closestMoreThanArray.left, closestMoreThanArray.right)) {
-            case closestLessThanArray.left:
-                this.executeOperations(closestLessThanArray.left, ClosestThan.Left, state)
-                break;
+        switch (smallestDistanceToTop) {
             case closestMoreThanArray.left:
-                this.executeOperations(closestMoreThanArray.left + 1, ClosestThan.Left, state)
+                smallestDistanceToTop++
+            case closestLessThanArray.left:
+                this.executeOperations(smallestDistanceToTop, ClosestThan.Left, state)
                 break;
             case closestLessThanArray.right:
-                this.executeOperations(closestLessThanArray.right, ClosestThan.Right, state)
-                break;
             case closestMoreThanArray.right:
-                this.executeOperations(closestMoreThanArray.right, ClosestThan.Right, state)
+                this.executeOperations(smallestDistanceToTop, ClosestThan.Right, state)
                 break;
             default:
         }
@@ -186,12 +180,12 @@ class PushswapSolver {
 
     executeOperations(number, direction, state) {
         if (direction === ClosestThan.Left) {
-            for (let i = 1; i <= number; i++) {
+            for (let i = 0; i < number; i++) {
                 state.firstElementToLastRB()
             }
         }
         else {
-            for (let i = 1; i <= number; i++) {
+            for (let i = 0; i < number; i++) {
                 state.lastElementToFirstRRB()
             }
         }
@@ -207,7 +201,7 @@ class PushswapSolver {
         // determine which operation to use
         let operation = closest.position === Closest.topElement ? PushswapSolver.pushToBottom : PushswapSolver.pushToTop
 
-        for (let i = 1; i <= closest.distance; i++) {
+        for (let i = 0; i < closest.distance; i++) {
             operation == PushswapSolver.pushToBottom ? state.firstElementToLastRA() : state.lastElementToFirstRRA()
         }
         return closest
